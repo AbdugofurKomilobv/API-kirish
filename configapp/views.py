@@ -9,6 +9,15 @@ from rest_framework.response import Response
 from .models import *
 from .serializers import *
 
+
+@api_view(['POST'])
+def ism(request):
+    ism = request.data['ism']
+    familya = request.data['familya']
+    yil = request.data['yili']
+    yil = yil(int)
+    return Response(data={"ism":  ism, "familya":  familya, "yili":  yil})
+
 @api_view(['GET','POST'])
 def movie_api(request):
     if request.method == "GET":
@@ -114,3 +123,25 @@ def actor_detail(request,pk):
         responses = {'success':True, 'message': 'Actor dalete successfully'}
         return Response(data=responses,status=status.HTTP_204_NO_CONTENT)
         
+@api_view(['POST'])
+def add_actor_to_movie(request, slug):
+    try:
+        movie = Movie.objects.get(slug=slug)
+    except Movie.DoesNotExist:
+        return Response({"error": "Movie not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    actor_id = request.data.get("actor_id")
+    if not actor_id:
+        return Response({"error": "actor_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        actor = Actors.objects.get(id=actor_id)
+    except Actors.DoesNotExist:
+        return Response({"error": "Actor not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    movie.actors.add(actor)
+    movie.save()
+    return Response({
+        "success": True,
+        "message": f"Actor '{actor.name}' added to movie '{movie.title}'"
+    }, status=status.HTTP_200_OK)
